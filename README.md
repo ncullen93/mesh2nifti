@@ -6,6 +6,7 @@ This code works as a standard python function, but I will be turning it into a c
 
 ## Installation
 Currently, there is no installation process. Simply follow these steps to use the code:
+	
 	- download this repository and unzip it
 	- change directories to this repository
 		- e.g. 'cd mesh2nifti-master'
