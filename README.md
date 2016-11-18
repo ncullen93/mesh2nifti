@@ -4,6 +4,18 @@ Convert a simNIBS/GMSH .msh file into a Nifti .nii.gz file. This is useful if yo
 
 This code works as a standard python function, but I will be turning it into a command-line tool soon.
 
+## Installation
+Currently, there is no installation process. Simply follow these steps to use the code:
+	- download this repository and unzip it
+	- change directories to this repository
+		- e.g. 'cd mesh2nifti-master'
+	- open a python interpreter
+		- e.g. type 'python' in the command line on a mac
+	- run the following line:
+		- `from mesh2nifti import mesh2nifti`
+
+Now you can use the function as shown in the example below!
+
 ## Example
 All you have to do is pass in the file paths to the mesh (.msh) file and the T1 (.nii.gz) file used to create the mesh file in simNIBS. You can pass in a `view` argument, which determines the surface to use (1=very small grey matter, ... , 5=entire head, .. 'all'=all). You can also pass in a `value_set` argument, which determines the stimulation value to use ('E','normE','J','normJ').
 
