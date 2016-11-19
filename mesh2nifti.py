@@ -114,6 +114,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	- saves a new Nifti file to disk
 
 	"""
+	############
+	### IO 
+	############
 	t1_file 	= t1
 	mesh_file 	= mesh
 
@@ -124,6 +127,14 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	t1 = nib.load(t1_file)
 	# load mesh
 	mesh = gmsh_numpy.read_msh(mesh_file)
+
+	#############
+	### end IO 
+	#############
+
+	#########################
+	### Gather Mesh data
+	#########################
 
 	# get elements from View in {1,2,3,4,5} from small (gray matter) to large (head)
 	if view == 'all':
@@ -148,21 +159,47 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	gray_coords = mesh.nodes.node_coord[gray_nodes[rc[:,0],rc[:,1]]-1,:]
 	gray_coords = gray_coords.reshape(gray_coords.shape[0]/4,4,3)
 	
-	### THIS IS FOR POSSIBLE -1 VALUES IN DIAGONALS OF THE AFFINE TRANSFORM.. 
-	## thought of just applying the inverse transform, but affine biases don't seem correct
+	##########################
+	### end gather mesh data
+	##########################
+
+
+	###############################################
+	#### INVERSE TRANSFORM DATA BACK TO INDEX SPACE
+	###############################################
+	## NOTE: While the diagonals (e.g. -1's) are needed, it seems that the
+	## affine transform biases aren't correct and simNIBS just uses t1.shape / 2 (128)
+	## for all pixel offsets.
+	## e.g. to get back to index space, do 'coord + 128' and multiply by -1 if the
+	## corresponding diagonal in the t1 affine is -1.. meaning that dim is flipped.
 	affine = t1.affine.copy()
 	if t1.affine[0,0] < 0:
-		print 'Swaping X orientation in the output img affine..'
-		affine[0,0] *= -1
-		affine[0,-1] *= -1
+		print 'Swaping X orientation of the coordinates because of T1 affine..'
+		gray_coords[:,:,0] *= -1
+		#affine[0,0] *= -1
+		#affine[0,-1] *= -1
 	if t1.affine[1,1] < 0:
 		print 'Swaping Y orientation in the output img affine..'
-		affine[1,1] *= -1
-		affine[1,-1] *= -1
+		gray_coords[:,:,1] *= -1
+		#affine[1,1] *= -1
+		#affine[1,-1] *= -1
 	if t1.affine[2,2] < 0:
 		print 'Swaping Z orientation in the output img affine..'
-		affine[2,2] *= -1
-		affine[2,-1] *= -1
+		gray_coords[:,:,2] *= -1
+		#affine[2,2] *= -1
+		#affine[2,-1] *= -1
+
+	gray_coords[:,:,0] += 128#np.abs(t1.affine[0,-1])
+	gray_coords[:,:,1] += 128#np.abs(t1.affine[1,-1])
+	gray_coords[:,:,2] += 128#np.abs(t1.affine[2,-1])
+
+	###############################################
+	#### end inverse transform
+	###############################################
+
+	##################################
+	## begin pre-mapping of indices ##
+	##################################
 
 	# get min and max XYZ coords for each element, for easier sorting
 	mins = np.min(gray_coords,axis=1)
@@ -179,9 +216,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	print 'min/max Y coordinate: ', y_min,y_max
 	print 'min/max Z coordinate: ', z_min,z_max
 
-	##################################
-	## begin pre-mapping of indices ##
-	##################################
+
 	if verbose > 0:
 		print 'Performing pre-mapping..'
 		
@@ -216,6 +251,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		gray_vals	= mesh.elmdata[1].value[gray_elm_idx]
 
 	##################################
+	# end get simulation values
 	##################################
 
 	##################################
@@ -224,7 +260,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	if verbose > 0:
 		print 'Voxelizing the Mesh..'
 	data = np.zeros(t1.shape)
-	bias = int(t1.shape[0] / 2.) # 128
+	# bias = pixel offset transform... you would think it's the bias of t1.affine,
+	# but it turns out to just be t1.shape / 2 (e.g. 128)... weird.
+	#bias = int(t1.shape[0] / 2.)
 	new = -1
 	for x in xrange(x_min,x_max,voxel_size):
 		if x != new:
@@ -235,9 +273,10 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 			for z in xrange(z_min,z_max,voxel_size):
 				for cand_idx in list(candidates[(x,y,z)]):
 					if pt_in_tetra((x,y,z),gray_coords[cand_idx,:,:]):
-						data[x+bias,y+bias,z+bias] = gray_vals[cand_idx]
+						data[x,y,z] = gray_vals[cand_idx]
 						break
 	##################################
+	# end voxelize mesh
 	##################################
 
 	##################################
