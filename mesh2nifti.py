@@ -172,13 +172,14 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	#### INVERSE TRANSFORM DATA BACK TO INDEX SPACE
 	###############################################
 	## NOTE: While the diagonals (e.g. -1's) are needed, it seems that the
-	## affine transform biases aren't correct and simNIBS just uses t1.shape / 2 (128)
-	## for all pixel offsets.
-	## e.g. to get back to index space, do 'coord + 128' and multiply by -1 if the
+	## simNIBS just uses t1.shape / 2 (128) as offset bias instead of the affine values
+	## e.g. to get to index space, do 'coord + 128' and multiply by -1 if the
 	## corresponding diagonal in the t1 affine is -1.. meaning that dim is flipped.
 	if verbose > 0:
 		print 'Applying inverse transform to Mesh coordinates..'
 	affine = t1.affine.copy()
+	
+	## swaping dims if necessary
 	if t1.affine[0,0] < 0:
 		print 'Swaping X orientation of the coordinates because of T1 affine..'
 		gray_coords[:,:,0] *= -1
@@ -194,7 +195,8 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		gray_coords[:,:,2] *= -1
 		#affine[2,2] *= -1
 		#affine[2,-1] *= -1
-
+	
+	## adding affine bias
 	gray_coords[:,:,0] += 128#np.abs(t1.affine[0,-1])
 	gray_coords[:,:,1] += 128#np.abs(t1.affine[1,-1])
 	gray_coords[:,:,2] += 128#np.abs(t1.affine[2,-1])
@@ -213,11 +215,11 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	
 	# get complete range of XYZ coords for all nodes
 	x_min = int(np.min(mins[:,0]))
-	x_max = int(np.max(maxs[:,0]))+1
+	x_max = min(int(np.max(maxs[:,0]))+1,256)
 	y_min = int(np.min(mins[:,1]))
-	y_max = int(np.max(maxs[:,1]))+1
+	y_max = min(int(np.max(maxs[:,1]))+1,256)
 	z_min = int(np.min(mins[:,2]))
-	z_max = int(np.max(mins[:,2]))+1
+	z_max = min(int(np.max(mins[:,2]))+1,256)
 	print 'min/max X coordinate: ', x_min,x_max
 	print 'min/max Y coordinate: ', y_min,y_max
 	print 'min/max Z coordinate: ', z_min,z_max

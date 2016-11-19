@@ -25,8 +25,8 @@ You can pass in a `view` argument, which determines the surface to use:
 	- 1 = white matter
 	- 2 = gray matter
 	- 3 = cerebral-spinal fluid
-	- 4 = skull?
-	- 5 = entire head?
+	- 4 = skull
+	- 5 = entire head
 	- 'all' = use all	
 
 
