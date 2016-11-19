@@ -18,7 +18,24 @@ Currently, there is no installation process. Simply follow these steps to use th
 Now you can use the function as shown in the example below!
 
 ## Example
-All you have to do is pass in the file paths to the mesh (.msh) file and the T1 (.nii.gz) file used to create the mesh file in simNIBS. You can pass in a `view` argument, which determines the surface to use (1=very small grey matter, ... , 5=entire head, .. 'all'=all). You can also pass in a `value_set` argument, which determines the stimulation value to use ('E','normE','J','normJ').
+All you have to do is pass in the file paths to the mesh (.msh) file and the T1 (.nii.gz) file used to create the mesh file in simNIBS. 
+
+You can pass in a `view` argument, which determines the surface to use:
+
+	- 1 = white matter
+	- 2 = gray matter
+	- 3 = cerebral-spinal fluid
+	- 4 = skull?
+	- 5 = entire head?
+	- 'all' = use all	
+
+
+You can also pass in a `value_set` argument, which determines the stimulation value to use:
+
+	- 'E'
+	- 'normE'
+	- 'J'
+	- 'normJ'
 
 This code should take ~15 minutes to run, although setting the voxel size to 2 (i.e. 2x2x2) is significantly faster.
 

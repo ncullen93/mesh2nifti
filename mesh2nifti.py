@@ -85,8 +85,12 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	view 	: integer
 		which surface/volume to use
 		possible values:
-			[1, 2, 3, 4, 5] or 'all'
-			where 1 = very small gray matter and 5 = entire head
+			1 = white matter
+			2 = gray matter
+			3 = cerebral-spinal fluid
+			4 = skull?
+			5 = entire head?
+			'all' = use all
 
 	value_set	: string
 		which simulation values to use
@@ -154,7 +158,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 
 	# get coordinates of the nodes for each element
 	if verbose > 0:
-		print 'Getting node coordinates..'
+		print 'Getting mesh data..'
 	rc = np.array(list(it.product(np.arange(gray_nodes.shape[0]),np.arange(gray_nodes.shape[1]))))
 	gray_coords = mesh.nodes.node_coord[gray_nodes[rc[:,0],rc[:,1]]-1,:]
 	gray_coords = gray_coords.reshape(gray_coords.shape[0]/4,4,3)
@@ -172,6 +176,8 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	## for all pixel offsets.
 	## e.g. to get back to index space, do 'coord + 128' and multiply by -1 if the
 	## corresponding diagonal in the t1 affine is -1.. meaning that dim is flipped.
+	if verbose > 0:
+		print 'Applying inverse transform to Mesh coordinates..'
 	affine = t1.affine.copy()
 	if t1.affine[0,0] < 0:
 		print 'Swaping X orientation of the coordinates because of T1 affine..'
@@ -218,7 +224,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 
 
 	if verbose > 0:
-		print 'Performing pre-mapping..'
+		print 'Pre-mapping candidate elements for each voxel..'
 		
 	candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) \
 		for b in range(y_min,y_max+2)\
@@ -260,14 +266,11 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	if verbose > 0:
 		print 'Voxelizing the Mesh..'
 	data = np.zeros(t1.shape)
-	# bias = pixel offset transform... you would think it's the bias of t1.affine,
-	# but it turns out to just be t1.shape / 2 (e.g. 128)... weird.
-	#bias = int(t1.shape[0] / 2.)
 	new = -1
 	for x in xrange(x_min,x_max,voxel_size):
 		if x != new:
 			if verbose > 0:
-				print 100*round((x-x_min) / float(np.abs(x_min)+np.abs(x_max)),3) , '%'
+				print 100*np.round(((x-x_min) / float(x_max-x_min)),3) , '%'
 			new= x
 		for y in xrange(y_min,y_max,voxel_size):
 			for z in xrange(z_min,z_max,voxel_size):
