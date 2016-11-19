@@ -187,17 +187,17 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	
 	## swaping dims if necessary
 	if t1.affine[0,0] < 0:
-		print 'Swaping X orientation of the coordinates because of T1 affine..'
+		print 'Swaping X orientation because of negative diag in T1 affine..'
 		gray_coords[:,:,0] *= -1
 		#affine[0,0] *= -1
 		#affine[0,-1] *= -1
 	if t1.affine[1,1] < 0:
-		print 'Swaping Y orientation in the output img affine..'
+		print 'Swaping Y orientation because of negative diag in T1 affine..'
 		gray_coords[:,:,1] *= -1
 		#affine[1,1] *= -1
 		#affine[1,-1] *= -1
 	if t1.affine[2,2] < 0:
-		print 'Swaping Z orientation in the output img affine..'
+		print 'Swaping Z orientation because of negative diag in T1 affine..'
 		gray_coords[:,:,2] *= -1
 		#affine[2,2] *= -1
 		#affine[2,-1] *= -1
@@ -241,9 +241,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	for i in range(mins.shape[0]):
 		xmin,ymin,zmin = mins[i,:]
 		xmax,ymax,zmax = maxs[i,:]
-		for x in np.arange(int(xmin),int(xmax)+1):
-			for y in np.arange(int(ymin),int(ymax)+1):
-				for z in np.arange(int(zmin),int(zmax)+1):
+		for x in xrange(int(xmin),int(xmax)+1):
+			for y in xrange(int(ymin),int(ymax)+1):
+				for z in xrange(int(zmin),int(zmax)+1):
 					candidates[(x,y,z)].update({i})
 	###################
 	# end pre-mapping #
@@ -272,19 +272,20 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	#### VOXELIZE THE MESH - Actually map voxels to intensities
 	##################################
 	if verbose > 0:
-		print 'Voxelizing the Mesh..'
-	data = np.zeros(t1.shape)
-	new = -1
-	for x in xrange(x_min,x_max,voxel_size):
+		print 'Voxelizing the Mesh at size %i%s^2'%(voxel_size,mesh.nodes.units)
+	data 	= np.zeros(t1.shape)
+	vox 	= voxel_size
+	new		= -1
+	for x in xrange(x_min,x_max,vox):
 		if x != new:
 			if verbose > 0:
 				print 100*np.round(((x-x_min) / float(x_max-x_min)),3) , '%'
 			new= x
-		for y in xrange(y_min,y_max,voxel_size):
-			for z in xrange(z_min,z_max,voxel_size):
+		for y in xrange(y_min,y_max,vox):
+			for z in xrange(z_min,z_max,vox):
 				for cand_idx in list(candidates[(x,y,z)]):
 					if pt_in_tetra((x,y,z),gray_coords[cand_idx,:,:]):
-						data[x,y,z] = gray_vals[cand_idx]
+						data[x:(x+vox),y:(y+vox),z:(z+vox)] = gray_vals[cand_idx]
 						break
 	##################################
 	# end voxelize mesh
