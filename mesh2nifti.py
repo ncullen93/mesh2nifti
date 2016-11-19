@@ -32,6 +32,8 @@ all have the same sign:
              |x  y  z  1|
 
 """
+__author__ = """Nicholas Cullen"""
+
 
 import os
 import time
@@ -44,7 +46,11 @@ import gmsh_numpy
 
 def pt_in_tetra(pt, tetra):
 	"""
-	Determines if a point is inside a tetrahedron
+	Determines if a point is inside a tetrahedron.
+
+	This function clocks at ~40 microseconds and is
+	one major bottleneck of the code. It probably can't
+	be improved any further without using C++, etc.
 
 	pt : np array , shape = (3,)
 	tetra : np array, shape = (4,3)
@@ -178,11 +184,11 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	##################################
 	if verbose > 0:
 		print 'Performing pre-mapping..'
-	xd = dict([(i,set()) for i in range(x_min,x_max+2)])
-	yd = dict([(i,set()) for i in range(y_min,y_max+2)])
-	zd = dict([(i,set()) for i in range(z_min,z_max+2)])
-	candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) for b in range(y_min,y_max+2)\
+		
+	candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) \
+		for b in range(y_min,y_max+2)\
 		for c in range(z_min,z_max+2)])
+	
 	for i in range(mins.shape[0]):
 		xmin,ymin,zmin = mins[i,:]
 		xmax,ymax,zmax = maxs[i,:]
@@ -194,7 +200,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	# end pre-mapping #
 	###################
 
+	##################################
 	# get values belonging to the given value set
+	##################################
 	if value_set == 'E':
 		gray_vals	= mesh.elmdata[0].value[gray_elm_idx]
 	elif value_set == 'normE':
@@ -207,6 +215,12 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		print 'Value_set argument not understood.. using normE as default'
 		gray_vals	= mesh.elmdata[1].value[gray_elm_idx]
 
+	##################################
+	##################################
+
+	##################################
+	#### VOXELIZE THE MESH - Actually map voxels to intensities
+	##################################
 	if verbose > 0:
 		print 'Voxelizing the Mesh..'
 	data = np.zeros(t1.shape)
@@ -223,7 +237,12 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 					if pt_in_tetra((x,y,z),gray_coords[cand_idx,:,:]):
 						data[x+bias,y+bias,z+bias] = gray_vals[cand_idx]
 						break
+	##################################
+	##################################
 
+	##################################
+	### SAVE THE IMAGE 
+	##################################
 	if verbose > 0:
 		print 'Saving NIFTI image..'
 	new_img = nilearn.image.new_img_like(t1,data,affine=affine)
