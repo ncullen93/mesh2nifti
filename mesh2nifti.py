@@ -49,10 +49,9 @@ def pt_in_tetra(pt, tetra):
 	pt : np array , shape = (3,)
 	tetra : np array, shape = (4,3)
 	"""
-	vals 		= np.empty((5,4))
+	vals 		= np.ones((5,4))
 	vals[0,:3] 	= pt
 	vals[1:,:3] = tetra
-	vals[:,3] 	= 1
 
 	idxs = [[1,2,3,4],
 			[0,2,3,4],
@@ -60,14 +59,8 @@ def pt_in_tetra(pt, tetra):
 			[1,2,0,4],
 			[1,2,3,0]]
 
-	det0 	= np.sign(np.linalg.det(vals[idxs[-1],:]))
-	is_in 	= True
-	for i in range(0,len(idxs)-1):
-		sign 	= np.sign(np.linalg.det(vals[idxs[i],:]))
-		if sign!= det0:
-			is_in=False
-			break
-	return is_in
+	dets = np.linalg.det(vals[idxs,:])
+	return np.all(dets > 0) if dets[0] > 0 else np.all(dets < 0)
 
 
 def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
@@ -115,6 +108,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	- saves a new Nifti file to disk
 
 	"""
+	t1_file 	= t1
+	mesh_file 	= mesh
+
 	if output_file is None:
 		t1_split = t1_file.split('.nii.gz')
 		output_file = t1_split[0]+'_from_mesh.nii.gz'
@@ -145,6 +141,22 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	rc = np.array(list(it.product(np.arange(gray_nodes.shape[0]),np.arange(gray_nodes.shape[1]))))
 	gray_coords = mesh.nodes.node_coord[gray_nodes[rc[:,0],rc[:,1]]-1,:]
 	gray_coords = gray_coords.reshape(gray_coords.shape[0]/4,4,3)
+	
+	### THIS IS FOR POSSIBLE -1 VALUES IN DIAGONALS OF THE AFFINE TRANSFORM.. 
+	## thought of just applying the inverse transform, but affine biases don't seem correct
+	affine = t1.affine.copy()
+	if t1.affine[0,0] < 0:
+		print 'Swaping X orientation in the output img affine..'
+		affine[0,0] *= -1
+		affine[0,-1] *= -1
+	if t1.affine[1,1] < 0:
+		print 'Swaping Y orientation in the output img affine..'
+		affine[1,1] *= -1
+		affine[1,-1] *= -1
+	if t1.affine[2,2] < 0:
+		print 'Swaping Z orientation in the output img affine..'
+		affine[2,2] *= -1
+		affine[2,-1] *= -1
 
 	# get min and max XYZ coords for each element, for easier sorting
 	mins = np.min(gray_coords,axis=1)
@@ -152,36 +164,32 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	
 	# get complete range of XYZ coords for all nodes
 	x_min = int(np.min(mins[:,0]))
-	x_max = int(np.max(maxs[:,0])+1)
+	x_max = int(np.max(maxs[:,0]))+1
 	y_min = int(np.min(mins[:,1]))
-	y_max = int(np.max(maxs[:,1])+1)
+	y_max = int(np.max(maxs[:,1]))+1
 	z_min = int(np.min(mins[:,2]))
-	z_max = int(np.max(mins[:,2])+1)
+	z_max = int(np.max(mins[:,2]))+1
+	print 'min/max X coordinate: ', x_min,x_max
+	print 'min/max Y coordinate: ', y_min,y_max
+	print 'min/max Z coordinate: ', z_min,z_max
 
 	##################################
 	## begin pre-mapping of indices ##
 	##################################
 	if verbose > 0:
 		print 'Performing pre-mapping..'
-	xd = dict([(i,[]) for i in range(int(np.min(mins[:,0])),int(np.max(maxs[:,0]))+1)])
-	yd = dict([(i,[]) for i in range(int(np.min(mins[:,1])),int(np.max(maxs[:,1]))+1)])
-	zd = dict([(i,[]) for i in range(int(np.min(mins[:,2])),int(np.max(maxs[:,2]))+1)])
+	xd = dict([(i,set()) for i in range(x_min,x_max+2)])
+	yd = dict([(i,set()) for i in range(y_min,y_max+2)])
+	zd = dict([(i,set()) for i in range(z_min,z_max+2)])
+	candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) for b in range(y_min,y_max+2)\
+		for c in range(z_min,z_max+2)])
 	for i in range(mins.shape[0]):
 		xmin,ymin,zmin = mins[i,:]
 		xmax,ymax,zmax = maxs[i,:]
-		for x in np.arange(int(xmin+1),int(xmax)+1):
-			xd[x].append(i)
-		for y in np.arange(int(ymin+1),int(ymax)+1):
-			yd[y].append(i)
-		for z in np.arange(int(zmin+1),int(zmax)+1):
-			zd[z].append(i)
-
-	for k in xd.keys():
-		xd[k] = frozenset(xd[k])
-	for k in yd.keys():
-		yd[k] = frozenset(yd[k])
-	for k in zd.keys():
-		zd[k] = frozenset(zd[k])
+		for x in np.arange(int(xmin),int(xmax)+1):
+			for y in np.arange(int(ymin),int(ymax)+1):
+				for z in np.arange(int(zmin),int(zmax)+1):
+					candidates[(x,y,z)].update({i})
 	###################
 	# end pre-mapping #
 	###################
@@ -202,7 +210,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	if verbose > 0:
 		print 'Voxelizing the Mesh..'
 	data = np.zeros(t1.shape)
-	bias = int(t1.shape[0] / 2.)
+	bias = int(t1.shape[0] / 2.) # 128
 	new = -1
 	for x in xrange(x_min,x_max,voxel_size):
 		if x != new:
@@ -211,18 +219,14 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 			new= x
 		for y in xrange(y_min,y_max,voxel_size):
 			for z in xrange(z_min,z_max,voxel_size):
-				candidates = list(xd[x]&yd[y]&zd[z])
-				for cand_idx in candidates:
+				for cand_idx in list(candidates[(x,y,z)]):
 					if pt_in_tetra((x,y,z),gray_coords[cand_idx,:,:]):
-						x_idx = range((x+bias),(x+bias+voxel_size))
-						y_idx = range((y+bias),(y+bias+voxel_size))
-						z_idx = range((z+bias),(z+bias+voxel_size))
-						data[x_idx,y_idx,z_idx] = gray_vals[cand_idx]
+						data[x+bias,y+bias,z+bias] = gray_vals[cand_idx]
 						break
 
 	if verbose > 0:
 		print 'Saving NIFTI image..'
-	new_img = nilearn.image.new_img_like(t1,data,affine=t1.affine)
+	new_img = nilearn.image.new_img_like(t1,data,affine=affine)
 	try:
 		nib.save(new_img, output_file)
 	except:
@@ -230,6 +234,5 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		t1_split = t1_file.split('.nii.gz')
 		output_file = t1_split[0]+'_from_mesh.nii.gz'
 		nib.save(new_img,output_file)
-
 
 
