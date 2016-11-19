@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 Converts .msh file to .nifti
 
@@ -34,10 +35,9 @@ all have the same sign:
 """
 __author__ = """Nicholas Cullen"""
 
-
+import sys
 import os
 import time
-import itertools as it
 import nibabel as nib
 import nilearn
 import nilearn.image
@@ -165,7 +165,11 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	# get coordinates of the nodes for each element
 	if verbose > 0:
 		print 'Getting mesh data..'
-	rc = np.array(list(it.product(np.arange(gray_nodes.shape[0]),np.arange(gray_nodes.shape[1]))))
+	rc = []
+	for i in xrange(gray_nodes.shape[0]):
+		for j in xrange(gray_nodes.shape[1]):
+			rc.append([i,j])
+	rc = np.array(rc)
 	gray_coords = mesh.nodes.node_coord[gray_nodes[rc[:,0],rc[:,1]]-1,:]
 	gray_coords = gray_coords.reshape(gray_coords.shape[0]/4,4,3)
 	
@@ -304,5 +308,113 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		t1_split = t1_file.split('.nii.gz')
 		output_file = t1_split[0]+'_from_mesh.nii.gz'
 		nib.save(new_img,output_file)
+
+if __name__=='__main__':
+	args = np.array(sys.argv[1:])
+
+	if '-h' in args or '-help' in args or len(args)==0:
+		print """Usage:
+		mesh2nifti.py -mesh /path/to/msh -t1 /path/to/t1 [-view (1,2,3,4,5)]\
+		[-value (E,normE,J,normJ)] [-vox voxel size] [-out /path/to/output] [-v verbosity]
+		"""
+	else:
+		# get verbosity
+		try:
+			verbose = args[np.where((args=='-v')|(args=='-verbose')\
+				|(args=='--v')|(args=='--verbose'))[0]+1][0]
+			try:
+				verbose = int(verbose)
+			except:
+				verbose = 0
+		except:
+			verbose = 0
+
+		# get mesh file
+		try:
+			mesh_file = args[np.where((args=='-mesh')|(args=='-msh')\
+				|(args=='--mesh')|(args=='--msh'))[0]+1][0]
+			if verbose > 0:
+				print 'Mesh file : %s' % mesh_file
+		except IndexError:
+			raise Exception('Must pass in .msh file with argument -mesh')
+		
+		# get t1 file
+		try:
+			t1_file = args[np.where((args=='-t1')|(args=='-T1')\
+				|(args=='--t1')|(args=='--T1'))[0]+1][0]
+			if verbose > 0:
+				print 'T1 file : %s' % t1_file
+		except IndexError:
+			raise Exception('Must pass in T1 .nii.gz file with argument -t1')
+
+		# get view
+		try:
+			view = args[np.where((args=='-view')|(args=='-View')\
+				|(args=='--view')|(args=='--View'))[0]+1][0]
+			try:
+				view = int(view)
+			except:
+				if view == 'all':
+					pass
+				else:
+					print 'Invalid View argument.. using View=2'
+					view=2
+			if verbose > 0:
+				print 'View: ' , view
+		except:
+			if verbose > 0:
+				print 'Using Default View=2'
+			view = 2
+
+		# get value set
+		try:
+			value_set = args[np.where((args=='-value')|(args=='-value_set')\
+				|(args=='-Value')|(args=='--value')\
+				|(args=='--value_set')|(args=='--Value'))[0]+1][0]
+			if value_set not in ['E','normE','J','normJ']:
+				print value_set
+				print 'Value set not in {E, normE,J,normJ}..Using normE as default'
+				value_set = 'normE'
+			if verbose > 0:
+				print 'Value Set: ' , value_set
+		except:
+			if verbose > 0:
+				print 'Using Default Value Set = normE'
+			value_set = 'normE'
+
+		# get voxel size
+		try:
+			voxel_size = args[np.where((args=='-vox')|(args=='-voxel')\
+				|(args=='-voxel_size')|(args=='--vox')\
+				|(args=='--voxel')|(args=='--voxel_size'))[0]+1][0]
+			try:
+				voxel_size = int(voxel_size)
+			except:
+				print 'Voxel size arg not an integer..using Default = 1'
+				voxel_size=1
+			if verbose > 0:
+				print 'Voxel Size: ', voxel_size
+		except:
+			if verbose > 0:
+				print 'Using Default Voxel Size = 1'
+			voxel_size=1
+
+		# get output file
+		try:
+			output_file = args[np.where((args=='-out')|(args=='-output')\
+				|(args=='-output_file')|(args=='--out')\
+				|(agrs=='--output')|(args=='--output_file'))[0]+1][0]
+			if verbose>0:
+				print 'Output File: ' , output_file
+		except:
+			output_file=None
+		
+		# run the conversion
+		mesh2nifti(mesh=mesh_file, t1=t1_file, view=view, 
+			value_set=value_set, voxel_size=voxel_size,
+			output_file=output_file, verbose=verbose)
+
+
+
 
 
