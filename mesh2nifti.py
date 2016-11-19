@@ -132,6 +132,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	# load mesh
 	mesh = gmsh_numpy.read_msh(mesh_file)
 
+	assert (len(mesh.elmdata) > 0), 'You appear to have passed in a regular T1 mesh file.\n\
+	This code only works on mesh files resulting from a simNIBS simulation run..'
+
 	#############
 	### end IO 
 	#############
@@ -152,6 +155,9 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	gray_elm_idx = np.where(\
 		 (mesh.elm.tag1 >= min_view)\
 		&(mesh.elm.tag1 <= max_view))[0]
+
+	if verbose > 0:
+		print 'Found %i relevant elements' % len(gray_elm_idx)
 
 	# get nodes belonging to each element
 	gray_nodes = mesh.elm.node_number_list[gray_elm_idx]
