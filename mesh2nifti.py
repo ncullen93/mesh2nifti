@@ -39,10 +39,10 @@ import sys
 import os
 import time
 import nibabel as nib
-import nilearn
 import nilearn.image
 import numpy as np
 import gmsh_numpy
+
 
 def pt_in_tetra(pt, tetra):
 	"""
@@ -131,7 +131,7 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	t1 = nib.load(t1_file)
 	# load mesh
 	mesh = gmsh_numpy.read_msh(mesh_file)
-
+	#mesh = read_msh(mesh_file)
 	assert (len(mesh.elmdata) > 0), 'You appear to have passed in a regular T1 mesh file.\n\
 	This code only works on mesh files resulting from a simNIBS simulation run..'
 
@@ -157,14 +157,14 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		&(mesh.elm.tag1 <= max_view))[0]
 
 	if verbose > 0:
-		print 'Found %i relevant elements' % len(gray_elm_idx)
+		sys.stdout.write('Found %i relevant elements' % len(gray_elm_idx))
 
 	# get nodes belonging to each element
 	gray_nodes = mesh.elm.node_number_list[gray_elm_idx]
 
 	# get coordinates of the nodes for each element
 	if verbose > 0:
-		print 'Getting mesh data..'
+		sys.stdout.write('Getting mesh data..')
 	rc = []
 	for i in xrange(gray_nodes.shape[0]):
 		for j in xrange(gray_nodes.shape[1]):
@@ -301,6 +301,8 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	if verbose > 0:
 		print 'Saving NIFTI image..'
 	new_img = nilearn.image.new_img_like(t1,data,affine=affine)
+	#new_img = t1
+	#new_img.set_data(data)
 	try:
 		nib.save(new_img, output_file)
 	except:
@@ -311,12 +313,12 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 
 if __name__=='__main__':
 	args = np.array(sys.argv[1:])
-
+	sys.stderr.write('TESTING TESTING')
 	if '-h' in args or '-help' in args or len(args)==0:
-		print """Usage:
+		sys.stdout.write("""Usage:
 		mesh2nifti.py -mesh /path/to/msh -t1 /path/to/t1 [-view (1,2,3,4,5)]\
 		[-value (E,normE,J,normJ)] [-vox voxel size] [-out /path/to/output] [-v verbosity]
-		"""
+		""")
 	else:
 		# get verbosity
 		try:
@@ -333,6 +335,8 @@ if __name__=='__main__':
 		try:
 			mesh_file = args[np.where((args=='-mesh')|(args=='-msh')\
 				|(args=='--mesh')|(args=='--msh'))[0]+1][0]
+			#if mesh_file[0] != '/':
+			#	mesh_file = os.path.join(os.getcwd(),mesh_file)
 			if verbose > 0:
 				print 'Mesh file : %s' % mesh_file
 		except IndexError:
@@ -342,6 +346,8 @@ if __name__=='__main__':
 		try:
 			t1_file = args[np.where((args=='-t1')|(args=='-T1')\
 				|(args=='--t1')|(args=='--T1'))[0]+1][0]
+			#if t1_file[0] != '/':
+			#	t1_file = os.path.join(os.getcwd(),t1_file)
 			if verbose > 0:
 				print 'T1 file : %s' % t1_file
 		except IndexError:
@@ -413,8 +419,3 @@ if __name__=='__main__':
 		mesh2nifti(mesh=mesh_file, t1=t1_file, view=view, 
 			value_set=value_set, voxel_size=voxel_size,
 			output_file=output_file, verbose=verbose)
-
-
-
-
-
