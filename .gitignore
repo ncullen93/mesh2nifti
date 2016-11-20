@@ -3,3 +3,7 @@ simnibs_example/*
 simnibs_example
 
 *.pyc
+*.zip
+
+build/
+dist/

@@ -39,6 +39,7 @@ import sys
 import os
 import time
 import nibabel as nib
+import nilearn
 import nilearn.image
 import numpy as np
 import gmsh_numpy
