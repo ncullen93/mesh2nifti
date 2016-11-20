@@ -9,13 +9,14 @@ The easiest way to use this code is to get the apre-built application folder. Fo
 
 ## Installation from Source
 Steps:	
+```
 	- Download this repository and unzip it
 	- cd to `mesh2nifti-master/`
 	- run `python setup.py py2app`
 	- copy the `mesh2nifti.app/` folder from the newly created `dist/` folder into your local `Applications/` folder
 	- add the application to your path with `echo "PATH=$PATH:/Applications/mesh2nifti.app/Contents/MacOS/" >> ~/.bash_profile`
 	- test that it works by running 'mesh2nifti -h'
-
+```
 See the section below for common errors when doing this.
 
 ## Installation with Python
@@ -25,7 +26,7 @@ If you want to use this code directly in Python, there is no installation proces
 ## Usage
 
 ```
-mesh2nifti.py [-h] -mesh MESH -t1 T1 [-view VIEW] [-field FIELD]
+mesh2nifti [-h] -mesh MESH -t1 T1 [-view VIEW] [-field FIELD]
                      [-voxel VOXEL] [-out OUT] [--verbose]
 optional arguments:
   -h, --help    show this help message and exit
