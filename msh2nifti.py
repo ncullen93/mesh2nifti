@@ -72,7 +72,7 @@ def pt_in_tetra(pt, tetra):
 	return np.all(dets > 0) if dets[0] > 0 else np.all(dets < 0)
 
 
-def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
+def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	output_file=None, verbose=1):
 	"""
 	Convert a simNIBS/GMSH .mesh file into a NIFTI image.
@@ -199,28 +199,12 @@ def mesh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	if verbose > 0:
 		print 'Applying inverse transform to Mesh coordinates..'
 	affine = t1.affine.copy()
-	
-	## swaping dims if necessary
-	if t1.affine[0,0] < 0:
-		print 'Swaping X orientation because of negative diag in T1 affine..'
-		gray_coords[:,:,0] *= -1
-		#affine[0,0] *= -1
-		#affine[0,-1] *= -1
-	if t1.affine[1,1] < 0:
-		print 'Swaping Y orientation because of negative diag in T1 affine..'
-		gray_coords[:,:,1] *= -1
-		#affine[1,1] *= -1
-		#affine[1,-1] *= -1
-	if t1.affine[2,2] < 0:
-		print 'Swaping Z orientation because of negative diag in T1 affine..'
-		gray_coords[:,:,2] *= -1
-		#affine[2,2] *= -1
-		#affine[2,-1] *= -1
-	
-	## adding affine bias
-	gray_coords[:,:,0] += 128#np.abs(t1.affine[0,-1])
-	gray_coords[:,:,1] += 128#np.abs(t1.affine[1,-1])
-	gray_coords[:,:,2] += 128#np.abs(t1.affine[2,-1])
+	# swap X orientation
+	gray_coords[:,:,0] *= -1
+	## add affine bias
+	gray_coords[:,:,0] += int(t1.shape[0] / 2.)
+	gray_coords[:,:,1] += int(t1.shape[1] / 2.)
+	gray_coords[:,:,2] += int((t1.shape[2] / 2.) - 1)
 
 	###############################################
 	#### end inverse transform
@@ -357,6 +341,6 @@ if __name__=='__main__':
 	print 'Voxel Size:\t', args.voxel, 'mm^3'
 
 	# run the conversion
-	mesh2nifti(mesh=args.mesh, t1=args.t1, view=args.view, 
+	msh2nifti(mesh=args.mesh, t1=args.t1, view=args.view, 
 		value_set=args.field, voxel_size=args.voxel,
 		output_file=args.out, verbose=args.verbose)
