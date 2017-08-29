@@ -78,9 +78,11 @@ case `uname` in
 esac
 
 #Install packages - nibabel and nilearn added by NCC
-$TARGET_DIR/miniconda2/bin/conda create -n simnibs_env nomkl nibabel nilearn numpy=1.11.1 scipy=0.17.0 pyopengl=3.1.1a1 pyopengl-accelerate=3.1.1a1 pyqt=4.11.4 qt=4.8
+$TARGET_DIR/miniconda2/bin/conda create -n simnibs_env nomkl numpy=1.11.1 scipy=0.17.0 pyopengl=3.1.1a1 pyopengl-accelerate=3.1.1a1 pyqt=4.11.4 qt=4.8
 
 $TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install nibabel
+$TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install nilearn
+$TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install scikit-learn
 
 rm Miniconda*
 cp -r ./ $TARGET_DIR
