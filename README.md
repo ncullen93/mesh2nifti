@@ -30,12 +30,12 @@ usage: msh2nifti [-h] -mesh MESH -t1 T1 [-view VIEW] [-field FIELD]
 
 optional arguments:<br>
   -h, --help    show this help message and exit<br>
-  -mesh MESH    mesh file from simNIBS simulation<br>
-  -t1 T1        reference T1 conform image<br>
-  -view VIEW    volume/surface to use<br>
-  -field FIELD  simulation field values to use<br>
-  -voxel VOXEL  resolution of voxelized image<br>
-  -out OUT      path to resulting image<br>
+  -mesh MESH    mesh file from simNIBS simulation filepath<br>
+  -t1 T1        reference T1 conform image filepath<br>
+  -view VIEW    integer from 1-5 -> which volume/surface to use (default = 2)<br>
+  -field FIELD  string -> simulation field values to use (default='normE')<br>
+  -voxel VOXEL  integer -> resolution of voxelized image (default=1)<br>
+  -out OUT      filepath to resulting output nifti image<br>
   --verbose     whether to print status<br>
 
 
