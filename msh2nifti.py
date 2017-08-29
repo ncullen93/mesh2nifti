@@ -33,6 +33,8 @@ all have the same sign:
              |x  y  z  1|
 
 """
+from __future__ import print_function
+
 __author__ = """Nicholas Cullen"""
 
 import sys
@@ -128,7 +130,7 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	mesh_file 	= mesh
 
 	if output_file is None:
-		print 'Using default Output File = T1_NAME_sim.nii.gz'
+		print('Using default Output File = T1_NAME_sim.nii.gz')
 		t1_split = t1_file.split('.nii.gz')
 		output_file = t1_split[0]+'_sim.nii.gz'
 	
@@ -168,17 +170,17 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 		&(mesh.elm.tag1 <= max_view))[0]
 
 	if verbose > 0:
-		print 'Found %i relevant elements' % len(gray_elm_idx)
+		print('Found %i relevant elements' % len(gray_elm_idx))
 
 	# get nodes belonging to each element
 	gray_nodes = mesh.elm.node_number_list[gray_elm_idx]
 
 	# get coordinates of the nodes for each element
 	if verbose > 0:
-		print 'Getting mesh data..'
+		print('Getting mesh data..')
 	rc = []
-	for i in xrange(gray_nodes.shape[0]):
-		for j in xrange(gray_nodes.shape[1]):
+	for i in range(gray_nodes.shape[0]):
+		for j in range(gray_nodes.shape[1]):
 			rc.append([i,j])
 	rc = np.array(rc)
 	gray_coords = mesh.nodes.node_coord[gray_nodes[rc[:,0],rc[:,1]]-1,:]
@@ -197,7 +199,7 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	## e.g. to get to index space, do 'coord + 128' and multiply by -1 if the
 	## corresponding diagonal in the t1 affine is -1.. meaning that dim is flipped.
 	if verbose > 0:
-		print 'Applying inverse transform to Mesh coordinates..'
+		print('Applying inverse transform to Mesh coordinates..')
 	affine = t1.affine.copy()
 	# swap X orientation
 	gray_coords[:,:,0] *= -1
@@ -225,13 +227,13 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	y_max = min(int(np.max(maxs[:,1]))+1,256)
 	z_min = int(np.min(mins[:,2]))
 	z_max = min(int(np.max(mins[:,2]))+1,256)
-	print 'min/max X coordinate: ', x_min,x_max
-	print 'min/max Y coordinate: ', y_min,y_max
-	print 'min/max Z coordinate: ', z_min,z_max
+	print('min/max X coordinate: ', x_min,x_max)
+	print('min/max Y coordinate: ', y_min,y_max)
+	print('min/max Z coordinate: ', z_min,z_max)
 
 
 	if verbose > 0:
-		print 'Pre-mapping candidate elements for each voxel..'
+		print('Pre-mapping candidate elements for each voxel..')
 		
 	candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) \
 		for b in range(y_min,y_max+2)\
@@ -240,10 +242,13 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	for i in range(mins.shape[0]):
 		xmin,ymin,zmin = mins[i,:]
 		xmax,ymax,zmax = maxs[i,:]
-		for x in xrange(int(xmin),int(xmax)+1):
-			for y in xrange(int(ymin),int(ymax)+1):
-				for z in xrange(int(zmin),int(zmax)+1):
-					candidates[(x,y,z)].update({i})
+		for x in range(int(xmin),int(xmax)+1):
+			for y in range(int(ymin),int(ymax)+1):
+				for z in range(int(zmin),int(zmax)+1):
+					if (x,y,z) in candidates.keys():
+						candidates[(x,y,z)].update({i})
+					else:
+						candidates[(x,y,z)] = {i}
 	###################
 	# end pre-mapping #
 	###################
@@ -260,7 +265,7 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	elif value_set == 'normJ':
 		gray_vals	= mesh.elmdata[3].value[gray_elm_idx]
 	else:
-		print 'Value_set argument not understood.. using normE as default'
+		print('Value_set argument not understood.. using normE as default')
 		gray_vals	= mesh.elmdata[1].value[gray_elm_idx]
 
 	##################################
@@ -271,17 +276,17 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	#### VOXELIZE THE MESH - Actually map voxels to intensities
 	##################################
 	if verbose > 0:
-		print 'Voxelizing the Mesh at size %i%s^3'%(voxel_size,mesh.nodes.units)
+		print('Voxelizing the Mesh at size %i%s^3'%(voxel_size,mesh.nodes.units))
 	data 	= np.zeros(t1.shape)
 	vox 	= voxel_size
 	new		= -1
-	for x in xrange(x_min,x_max,vox):
+	for x in range(x_min,x_max,vox):
 		if x != new:
 			if verbose > 0:
-				print 100*np.round(((x-x_min) / float(x_max-x_min)),3) , '%'
+				print(100*np.round(((x-x_min) / float(x_max-x_min)),3) , '%')
 			new= x
-		for y in xrange(y_min,y_max,vox):
-			for z in xrange(z_min,z_max,vox):
+		for y in range(y_min,y_max,vox):
+			for z in range(z_min,z_max,vox):
 				for cand_idx in list(candidates[(x,y,z)]):
 					if pt_in_tetra((x,y,z),gray_coords[cand_idx,:,:]):
 						data[x:(x+vox),y:(y+vox),z:(z+vox)] = gray_vals[cand_idx]
@@ -294,14 +299,14 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
 	### SAVE THE IMAGE 
 	##################################
 	if verbose > 0:
-		print 'Saving NIFTI image..'
+		print('Saving NIFTI image..')
 	new_img = nilearn.image.new_img_like(t1,data,affine=affine)
 	try:
 		if output_file.startswith('~'):
 			output_file = os.path.expanduser(output_file) 
 		nib.save(new_img, output_file)
 	except:
-		print 'Output file wasnt valid.. saving to T1 image directory instead'
+		print('Output file wasnt valid.. saving to T1 image directory instead')
 		t1_split = t1_file.split('.nii.gz')
 		output_file = t1_split[0]+'_from_mesh.nii.gz'
 		nib.save(new_img, output_file)
@@ -334,11 +339,11 @@ if __name__=='__main__':
 	## parse the args
 	args = parser.parse_args()
 
-	print 'Mesh File:\t' , args.mesh
-	print 'T1 File:\t', args.t1
-	print 'View:\t', args.view
-	print 'Field:\t', args.field
-	print 'Voxel Size:\t', args.voxel, 'mm^3'
+	print('Mesh File:\t' , args.mesh)
+	print('T1 File:\t', args.t1)
+	print('View:\t', args.view)
+	print('Field:\t', args.field)
+	print('Voxel Size:\t', args.voxel, 'mm^3')
 
 	# run the conversion
 	msh2nifti(mesh=args.mesh, t1=args.t1, view=args.view, 
