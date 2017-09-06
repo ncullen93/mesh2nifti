@@ -9,18 +9,21 @@ and a specific voxel size (1,2,..).
 This allows users to use the simulated fields seamlessly with structural/functional
 nifti files collected during real TMS/tDCS experimentation.
 
-
-Specific Instructions
-----------------------
-- uninstall simnibs (see below for exact commands)
-  - sudo rm -r -f $SIMNIBSDIR
-  - sed -i.bak '/SIMNIBS/d' ~/.bash_profile
-- download and unpack simnibs files again
-- Before installation:
-  - add msh2nifti.py file to simnibs_X.X.X/fem_efield/src_python/
-  - add install_simnibs_NCC.sh to simnibs_X.X.X/
-- install using './install_simnibs_NCC.sh' instead of 'install_simnibs.sh'
-  - run 'chmod u+x install_simnibs_NCC.sh' if you cant use the file at first
+Detailed Instructions
+---------------------
+0. Uninstall current simNIBS application:
+  - run 'sudo rm -r -f $SIMNIBSDIR' (add 'sudo' at beginning if you get an error)
+  - run 'sed -i.bak '/SIMNIBS/d' ~/.bash_profile'
+1. Download simNIBS tar file again from the website http://simnibs.de/version2/installation
+  - move folder wherever you want... doesnt matter
+2. Uncompress folder by double clicking or run 'tar -zxvf simnibs_X.X.X.tar.gz'
+3. Open the command line terminal and run 'cd ~/downloads/simnibsX.X.X'
+4. copy msh2nifti.py file to simnibs_X.X.X/fem_efield/src_pythonmsh2nifti.py
+5. copy install_simnibs_NCC.sh to simnibs_X.X.X/install_simnibs_NCC.sh
+6. run 'cd simnibs_X.X.X'
+8. run './install_simnibs_NCC.sh'
+  - if you get an error about permissions, run `chmod u+x install_simnibs_NCC.sh`
+9. Follow the rest of the simnibs instructions.. It installs exactly as before.
 
 
 USAGE
@@ -38,22 +41,16 @@ optional arguments:<br>
   -out OUT      filepath to resulting output nifti image<br>
   --verbose     whether to print status<br>
 
+EXAMPLE
+-------
+msh2nifti -mesh /Users/user-name/desktop/testfiles/mymeshfile.msh \
+          -t1 /Users/ncullen/desktop/testfiles/T1_conform.nii.gz \
+          -view 2 \
+          -field normE \
+          -voxel 1 \
+          -out /Users/user-name/desktop/testfiles/myniftifile.nii.gz \
+          --verbose
 
 
 
-Detailed Instructions
----------------------
-0. Uninstall current simNIBS application:
-	- run 'sudo rm -r -f $SIMNIBSDIR' (add 'sudo' at beginning if you get an error)
-	- run 'sed -i.bak '/SIMNIBS/d' ~/.bash_profile'
-1. Download simNIBS tar file again from the website http://simnibs.de/version2/installation
-	- move file to desktop or keep in downloads folder.. doesn't matter
-2. Uncompress folder by double clicking or run 'tar -zxvf simnibs_X.X.X.tar.gz'
-3. Open the command line terminal and run 'cd ~/downloads/simnibsX.X.X'
-4. copy msh2nifti.py file to simnibs_X.X.X/fem_efield/msh2nifti.py
-5. copy install_simnibs_NCC.sh to simniibs_2.0.1/install_simnibs.sh
-6. run 'cd simnibs_2.0.1'
-7. run 'chmod u+x install_simnibs_NCC.sh'
-8. run './install_simnibs.sh'
-9. Follow the rest of the instructions.. It installs exactly as before.
 
