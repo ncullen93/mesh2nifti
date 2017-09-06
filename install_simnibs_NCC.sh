@@ -83,6 +83,7 @@ $TARGET_DIR/miniconda2/bin/conda create -n simnibs_env nomkl numpy=1.11.1 scipy=
 $TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install nibabel
 $TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install nilearn
 $TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install scikit-learn
+$TARGET_DIR/miniconda2/envs/simnibs_env/bin/pip install tqdm
 
 rm Miniconda*
 cp -r ./ $TARGET_DIR

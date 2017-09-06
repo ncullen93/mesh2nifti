@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/Users/ncullen/desktop/simnibs_2.0.1/miniconda2/envs/simnibs_env/bin/python2.7 -u
 """
 Converts .msh file to .nifti
 
@@ -45,6 +45,7 @@ import nilearn
 import nilearn.image
 import numpy as np
 import argparse
+from tqdm import tqdm
 
 import gmsh_numpy
 
@@ -130,7 +131,8 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
     mesh_file   = mesh
 
     if output_file is None:
-        print('Using default Output File = T1_NAME_sim.nii.gz')
+        if verbose > 0:
+            print('Using default Output File = T1_NAME_sim.nii.gz')
         t1_split = t1_file.split('.nii.gz')
         output_file = t1_split[0]+'_sim.nii.gz'
     
@@ -226,18 +228,20 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
     y_min = int(np.min(mins[:,1]))
     y_max = min(int(np.max(maxs[:,1]))+1,256)
     z_min = int(np.min(mins[:,2]))
-    z_max = min(int(np.max(mins[:,2]))+1,256)
-    print('min/max X coordinate: ', x_min,x_max)
-    print('min/max Y coordinate: ', y_min,y_max)
-    print('min/max Z coordinate: ', z_min,z_max)
+    z_max = min(int(np.max(maxs[:,2]))+1,256)
+    
+    if verbose > 0:
+        print('min/max X coordinate: ', x_min,x_max)
+        print('min/max Y coordinate: ', y_min,y_max)
+        print('min/max Z coordinate: ', z_min,z_max)
 
 
     if verbose > 0:
         print('Pre-mapping candidate elements for each voxel..')
         
-    candidates = dict([((a,b,c),set()) for a in range(x_min,x_max+2) \
-        for b in range(y_min,y_max+2)\
-        for c in range(z_min,z_max+2)])
+    candidates = dict([((a,b,c),set()) for a in range(x_min-1,x_max+2) \
+        for b in range(y_min-1,y_max+2)\
+        for c in range(z_min-1,z_max+2)])
     
     for i in range(mins.shape[0]):
         xmin,ymin,zmin = mins[i,:]
@@ -245,10 +249,7 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
         for x in range(int(xmin),int(xmax)+1):
             for y in range(int(ymin),int(ymax)+1):
                 for z in range(int(zmin),int(zmax)+1):
-                    if (x,y,z) in candidates.keys():
-                        candidates[(x,y,z)].update({i})
-                    else:
-                        candidates[(x,y,z)] = {i}
+                    candidates[(x,y,z)].update({i})
     ###################
     # end pre-mapping #
     ###################
@@ -280,10 +281,8 @@ def msh2nifti(mesh, t1, view=2, value_set='normE', voxel_size=1,
     data    = np.zeros(t1.shape)
     vox     = voxel_size
     new     = -1
-    for x in range(x_min,x_max,vox):
+    for x in tqdm(range(x_min,x_max,vox)):
         if x != new:
-            if verbose > 0:
-                print(100*np.round(((x-x_min) / float(x_max-x_min)),3) , '%')
             new= x
         for y in range(y_min,y_max,vox):
             for z in range(z_min,z_max,vox):
@@ -339,11 +338,11 @@ if __name__=='__main__':
     ## parse the args
     args = parser.parse_args()
 
-    print('Mesh File:\t' , args.mesh)
-    print('T1 File:\t', args.t1)
-    print('View:\t', args.view)
-    print('Field:\t', args.field)
-    print('Voxel Size:\t', args.voxel, 'mm^3')
+    print('Mesh File:' , args.mesh)
+    print('T1 File:', args.t1)
+    print('View:', args.view)
+    print('Field:', args.field)
+    print('Voxel Size:', args.voxel, 'mm^3')
 
     # run the conversion
     msh2nifti(mesh=args.mesh, t1=args.t1, view=args.view, 
