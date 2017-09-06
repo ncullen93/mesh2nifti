@@ -17,10 +17,9 @@ Detailed Instructions
 1. Download simNIBS tar file again from the website http://simnibs.de/version2/installation
   - move folder wherever you want... doesnt matter
 2. Uncompress folder by double clicking or run 'tar -zxvf simnibs_X.X.X.tar.gz'
-3. Open the command line terminal and run 'cd ~/downloads/simnibsX.X.X'
 4. copy msh2nifti.py file to simnibs_X.X.X/fem_efield/src_pythonmsh2nifti.py
 5. copy install_simnibs_NCC.sh to simnibs_X.X.X/install_simnibs_NCC.sh
-6. run 'cd simnibs_X.X.X'
+6. go to uncompressed simnibs directory (e.g. run 'cd ~/downloads/simnibs_X.X.X'
 8. run './install_simnibs_NCC.sh'
   - if you get an error about permissions, run `chmod u+x install_simnibs_NCC.sh`
 9. Follow the rest of the simnibs instructions.. It installs exactly as before.
