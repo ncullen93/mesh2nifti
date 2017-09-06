@@ -4,6 +4,3 @@ simnibs_example
 
 *.pyc
 *.zip
-
-build/
-dist/
